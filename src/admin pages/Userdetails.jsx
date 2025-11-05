@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Api } from "../commonapi/api";
+import api from "../Common API/api";
 import {
   Calendar,
   CheckCircle,

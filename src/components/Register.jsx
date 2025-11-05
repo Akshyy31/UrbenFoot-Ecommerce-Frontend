@@ -1,29 +1,37 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Container, Row, Col, Form, Button, Card } from "react-bootstrap";
-import { useContext } from "react";
-import AuthContext from "../contextapi/AuthContext";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import AuthContext from "../contextapi/AuthContext";
 
 const Register = () => {
   const { registerUser } = useContext(AuthContext);
 
+  // ✅ Validation schema
   const validationSchema = Yup.object({
+    username: Yup.string().required("Username is required"),
+    first_name: Yup.string().required("First name is required"),
+    last_name: Yup.string().required("Last name is required"),
     email: Yup.string()
       .email("Invalid email address")
       .required("Email is required"),
     password: Yup.string()
       .min(6, "Password must be at least 6 characters")
       .required("Password is required"),
+    password2: Yup.string()
+      .oneOf([Yup.ref("password"), null], "Passwords must match")
+      .required("Confirm password is required"),
   });
 
   const formik = useFormik({
     initialValues: {
       username: "",
+      first_name: "",
+      last_name: "",
       email: "",
+      phone:"",
       password: "",
-      role: "user",
-      blocked:false
+      password2: "",
     },
     validationSchema,
     onSubmit: (values) => {
@@ -33,101 +41,71 @@ const Register = () => {
   });
 
   return (
-    <div>
-      <Container className="py-2 bg-light" style={{ height: "500px" }}>
-        <Row className="d-flex justify-content-center align-items-center">
-          <Col>
-            <Card className="card-registration my-4">
-              <Row className="g-0">
-                {/* Left Image Section */}
-                <Col md={6} className="d-none d-xl-block">
-                  <img
-                    src="https://cdn.dribbble.com/userupload/31820057/file/original-f00df735e0ae8b12b596efe4e7d1d5f3.png"
-                    alt="Sample"
-                    className="img-fluid"
-                    style={{ height: "620px", width: "700px" }}
-                  />
-                </Col>
+    <Container className="py-4 bg-light" style={{ minHeight: "100vh" }}>
+      <Row className="justify-content-center align-items-center">
+        <Col md={10} lg={8}>
+          <Card className="shadow-lg border-0 rounded-4">
+            <Row className="g-0">
+              {/* Left Image */}
+              <Col md={6} className="d-none d-md-block">
+                <img
+                  src="https://cdn.dribbble.com/userupload/31820057/file/original-f00df735e0ae8b12b596efe4e7d1d5f3.png"
+                  alt="Register"
+                  className="img-fluid rounded-start"
+                  style={{ height: "100%", objectFit: "cover" }}
+                />
+              </Col>
 
-                {/* Form Section */}
-                <Col md={6} style={{ height: "620px", width: "700px" }}>
-                  <Card.Body className="p-md-5 text-black">
-                    <h3 className="mb-5 text-uppercase">Registration Form</h3>
-                    <Form onSubmit={formik.handleSubmit}>
-                      <Form.Group controlId="username" className="mb-4">
-                        <Form.Label>Name</Form.Label>
+              {/* Form Section */}
+              <Col md={6} className="p-4">
+                <Card.Body>
+                  <h3 className="mb-4 text-center text-uppercase">Register</h3>
+                  <Form onSubmit={formik.handleSubmit}>
+                    {[
+                      { name: "username", label: "Username" },
+                      { name: "first_name", label: "First Name" },
+                      { name: "last_name", label: "Last Name" },
+                      { name: "email", label: "Email", type: "email" },
+                      { name: "phone", label: "Phone", },
+                      { name: "password", label: "Password", type: "password" },
+                      {
+                        name: "password2",
+                        label: "Confirm Password",
+                        type: "password",
+                      },
+                    ].map((field) => (
+                      <Form.Group controlId={field.name} className="mb-3" key={field.name}>
+                        <Form.Label>{field.label}</Form.Label>
                         <Form.Control
-                          size="lg"
-                          type="text"
-                          name="username"
-                          required
-                          value={formik.values.username}
+                          type={field.type || "text"}
+                          name={field.name}
+                          value={formik.values[field.name]}
                           onChange={formik.handleChange}
-                        />
-                      </Form.Group>
-
-                      <Form.Group controlId="email" className="mb-4">
-                        <Form.Label>Email ID</Form.Label>
-                        <Form.Control
-                          size="lg"
-                          type="email"
-                          name="email"
-                          required
-                          value={formik.values.email}
-                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
                           isInvalid={
-                            formik.touched.email && !!formik.errors.email
+                            formik.touched[field.name] && !!formik.errors[field.name]
                           }
+                          placeholder={`Enter your ${field.label.toLowerCase()}`}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {formik.errors.email}
+                          {formik.errors[field.name]}
                         </Form.Control.Feedback>
                       </Form.Group>
+                    ))}
 
-                      <Form.Group controlId="password" className="mb-4">
-                        <Form.Label>Password</Form.Label>
-                        <Form.Control
-                          size="lg"
-                          type="password"
-                          name="password"
-                          required
-                          value={formik.values.password}
-                          onChange={formik.handleChange}
-                          isInvalid={
-                            formik.touched.password && !!formik.errors.password
-                          }
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {formik.errors.password}
-                        </Form.Control.Feedback>
-                      </Form.Group>
-
-                      {/* Optional: Hidden role field (or dropdown if needed) */}
-                      <Form.Control
-                        type="hidden"
-                        name="role"
-                        value={formik.values.role}
-                      />
-
-                      <div className="d-flex justify-content-end">
-                        <Button
-                          type="submit"
-                          variant="success"
-                          size="lg"
-                          className="m-2"
-                        >
-                          Submit
-                        </Button>
-                      </div>
-                    </Form>
-                  </Card.Body>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
-    </div>
+                    <div className="d-flex justify-content-center">
+                      <Button type="submit" variant="dark" size="lg" className="mt-3 w-100">
+                        Register
+                      </Button>
+                    </div>
+                  </Form>
+                </Card.Body>
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 

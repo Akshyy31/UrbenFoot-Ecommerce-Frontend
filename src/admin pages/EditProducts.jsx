@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Api } from "../commonapi/api";
+// import { Api } from "../commonapi/api";
 
 function EditProduct({ id, onClose }) {
   const [formData, setFormData] = useState({

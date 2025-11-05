@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Api } from "../commonapi/api";
+// import { Api } from "../commonapi/api";
 
 
 const CategoryPage = () => {

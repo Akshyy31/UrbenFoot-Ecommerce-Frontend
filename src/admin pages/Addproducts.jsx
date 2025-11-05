@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Api } from "../commonapi/api";
+// import { Api } from "../commonapi/api";
 import { toast } from "react-toastify";
 
 function AddProducts({ onClose, onAdded }) {

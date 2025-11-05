@@ -1,68 +1,68 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import AuthContext from "./AuthContext";
-import { Api } from "../commonapi/api";
+import {
+  AddToWishListApi,
+  WishiListApi,
+  DeleteWishListApi,
+} from "../services/wishListService";
 
 const WishlistContext = createContext();
 
 export const WishlistProvider = ({ children }) => {
-  
   const { currentUser } = useContext(AuthContext);
   const [wishlist, setWishlist] = useState([]);
-
   const wishlistCount = wishlist.length;
 
   useEffect(() => {
-    if (currentUser?.id) fetchWishlist();
+    if (currentUser) fetchWishlist();
+    else setWishlist([]); 
   }, [currentUser]);
 
   const fetchWishlist = async () => {
     try {
-      const res = await Api.get(`/users/${currentUser.id}`);
-      setWishlist(res.data.wishlist || [] );
+      const res = await WishiListApi();
+      setWishlist(res.data || []);
     } catch (err) {
       console.error("Error fetching wishlist:", err);
     }
   };
 
-  const updateBackendWishlist = async (newWishlist) => {
-    try {
-      await Api.patch(`/users/${currentUser.id}`, {
-        wishlist: newWishlist,
-      });
-    } catch (err) {
-      console.error("Error updating wishlist:", err);
-    }
-  };
-
   const addToWishlist = async (product) => {
-    if (!currentUser) return;
+  try {
+    const res = await AddToWishListApi(product.id);
+    if (res.data?.message === "Already in wishlist") return;
 
-    const exists = wishlist.some((item) => item.id === product.id);
-    if (exists) return;
-    const updatedWishlist = [...wishlist, product];
-    setWishlist(updatedWishlist);
-    updateBackendWishlist(updatedWishlist);
-  };
+    const newItem = res.data?.wishlist_items;
+    if (newItem) {
+      setWishlist((prev) => [...prev, newItem]);
+    }
+  } catch (error) {
+    console.error("Error adding to wishlist:", error);
+  }
+};
 
   const removeFromWishlist = async (productId) => {
-    const updatedWishlist = wishlist.filter((item) => item.id !== productId);
-    setWishlist(updatedWishlist);
-    updateBackendWishlist(updatedWishlist);
+    try {
+      await DeleteWishListApi(productId);
+      setWishlist((prev) =>
+        prev.filter((item) => item.product.id !== productId)
+      );
+    } catch (error) {
+      console.error("Error removing from wishlist:", error);
+    }
   };
 
   const toggleWishlist = async (product) => {
-    const exists = wishlist.some((item) => item.id === product.id);
+    const exists = wishlist.some((item) => item.product.id === product.id);
     if (exists) {
-      removeFromWishlist(product.id);
+      await removeFromWishlist(product.id);
     } else {
-      addToWishlist(product);
+      await addToWishlist(product);
     }
   };
 
-  
-
   const isInWishlist = (productId) =>
-    wishlist.some((item) => item.id === productId);
+    wishlist.some((item) => item.product.id === productId);
 
   return (
     <WishlistContext.Provider
@@ -73,6 +73,7 @@ export const WishlistProvider = ({ children }) => {
         toggleWishlist,
         isInWishlist,
         wishlistCount,
+        fetchWishlist,
       }}
     >
       {children}

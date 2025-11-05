@@ -19,42 +19,55 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Api } from "../commonapi/api";
+import { adminUserListApi } from "../services/adminUserServices";
+import { adminOrderListApi, adminProductListApi } from "../services/adminProductServices";
+// import { Api } from "../commonapi/api";
 
 const Dashboard = () => {
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [barData, setBarData] = useState([]);
+  const [totalrevenue,setTotalRevenue]=useState(0)
+  const [totalOrders,setTotalOrders]=useState(0)
 
+  
+  console.log("orders : ",orders);
+  
   useEffect(() => {
     const fetchData = async () => {
-      const resUsers = await Api.get("/users");
-      const resProducts = await Api.get("/products");
-      const allOrders = resUsers.data.flatMap((user) => user.orders || []);
+      const resUsers = await adminUserListApi();
+      const resProducts = await adminProductListApi();
+      const allOrders = await adminOrderListApi()
       setUsers(resUsers.data);
-      setProducts(resProducts.data);
-      setOrders(allOrders);
-      setBarData(computeWeeklyRevenue(allOrders));
+      setProducts(resProducts.products);
+      setOrders(allOrders.orders);
+      setTotalRevenue(allOrders.total_revenue_generated)
+      setTotalOrders(allOrders.total_products_purchased)
+      setBarData(computeWeeklyRevenue(allOrders.orders));
     };
     fetchData();
     const interval = setInterval(fetchData, 30000); // every 30 seconds
     return () => clearInterval(interval); // clean up
   }, []);
 
-  const totalRevenue = orders.reduce(
-    (sum, order) => sum + (order.total || 0),
-    0
-  );
+  
+  
+
   const totalDelivered = orders.filter(
-    (order) => order.status === "delivered"
+    (order) => order.status === "DELIVERED"
   ).length;
+
   const totalProcessing = orders.filter(
-    (order) => order.status === "processing"
+    (order) => order.status === "PROCESSING"
   ).length;
+
   const totalPending = orders.filter(
-    (order) => order.status === "pending"
+    (order) => order.status === "PENDING"
   ).length;
+
+  console.log(totalPending);
+  
 
   const stats = [
     {
@@ -71,7 +84,7 @@ const Dashboard = () => {
     },
     {
       label: "Total Orders",
-      value: orders.length,
+      value: totalOrders,
       icon: <ShoppingCart className="w-5 h-5" />,
       bg: "bg-green-200",
     },
@@ -95,7 +108,7 @@ const Dashboard = () => {
     },
     {
       label: "Revenue",
-      value: `₹${totalRevenue.toLocaleString()}`,
+      value: `₹${totalrevenue}`,
       icon: <Wallet className="w-5 h-5" />,
       // bg: "bg-rose-200",
       bg: "bg-yellow-200",

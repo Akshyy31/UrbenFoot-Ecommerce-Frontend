@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Api } from "../commonapi/api";
+// import { Api } from "../commonapi/api";
 import { Trash2 } from "lucide-react";
+import { adminOrderListApi } from "../services/adminProductServices";
 
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -9,26 +10,15 @@ function AdminOrders() {
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 10;
 
+  console.log("orders : ",orders);
+  
+
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await Api.get("/users");
-        const allOrders = [];
-
-        res.data.forEach((user) => {
-          user.orders?.forEach((order, index) => {
-            allOrders.push({
-              ...order,
-              userId: user.id,
-              username: user.username || user.name,
-              email: user.email,
-              address: user.address,
-              id: order.id || index,
-            });
-          });
-        });
-
-        setOrders(allOrders);
+        const res = await adminOrderListApi();
+        setOrders(res.orders);
+        
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
@@ -54,53 +44,31 @@ function AdminOrders() {
     }
   };
 
-
-  const filteredOrders = orders
-    .filter((order) =>
-      statusFilter === "all" ? true : order.status === statusFilter
-    )
-    .filter(
-      (order) =>
-        order.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(
-    indexOfFirstOrder,
-    indexOfLastOrder
-  );
-
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-
+  
   return (
     <div className="p-4 bg-white min-h-screen">
       <h4 className="text-2xl text-center font-semibold mb-4">All Orders</h4>
 
-    
-  <div className="flex flex-col sm:flex-row sm:items-center mb-3 gap-2 w-full sm:w-auto">
-    <input
-      type="text"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      placeholder="🔍 Search by User Name"
-      className="px-4 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 w-full sm:w-64 transition"
-    />
+      <div className="flex flex-col sm:flex-row sm:items-center mb-3 gap-2 w-full sm:w-auto">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="🔍 Search by User Name"
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 w-full sm:w-64 transition"
+        />
 
-    <select
-      value={statusFilter}
-      onChange={(e) => setStatusFilter(e.target.value)}
-      className="px-4 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition w-full sm:w-48"
-    >
-      <option value="all">All Statuses</option>
-      <option value="pending">Pending</option>
-      <option value="processing">Processing</option>
-      <option value="delivered">Delivered</option>
-    </select>
-  
-</div>
-
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition w-full sm:w-48"
+        >
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="processing">Processing</option>
+          <option value="delivered">Delivered</option>
+        </select>
+      </div>
 
       <div className="overflow-auto">
         <table className="min-w-full text-sm  border-2 border-gray-200 rounded-lg overflow-hidden">
@@ -109,16 +77,18 @@ function AdminOrders() {
               <th className="p-3 border-1">Order ID</th>
               <th className="p-3 border-1">User</th>
               <th className="p-3 border-1">Items</th>
-              {/* <th className="p-3 border-1">Address</th> */}
+              <th className="p-3 border-1">Address</th>
               <th className="p-3 border-1">Time</th>
               <th className="p-3 border-1">Status</th>
               <th className="p-3 border-1">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y  divide-gray-100">
-            {currentOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
-                <td className="p-3 text-blue-500 font-semibold  border">order_{order.id}</td>
+            {orders.map((order) => (
+              <tr key={order.order_id} className="hover:bg-gray-50">
+                <td className="p-3 text-blue-500 font-semibold  border">
+                  order_{order.order_id}
+                </td>
                 <td className="p-3">
                   <div>
                     <div className="font-semibold">{order.username}</div>
@@ -126,9 +96,10 @@ function AdminOrders() {
                   </div>
                 </td>
                 <td className="p-3 space-y-1 border">
-                  {order.items.map((item, idx) => (
+                  {order.products.map((item, idx) => (
                     <div key={idx} className="text-xs">
-                      {item.name} <span className="text-gray-500">×{item.quantity}</span>
+                      {item.product_name}{" "}
+                      <span className="text-gray-500">×{item.quantity}</span>
                     </div>
                   ))}
                 </td>
@@ -170,11 +141,10 @@ function AdminOrders() {
                       Mark Delivered
                     </button>
                   )}
-                
                 </td>
               </tr>
             ))}
-            {currentOrders.length === 0 && (
+            {orders.length === 0 && (
               <tr>
                 <td colSpan="7" className="p-4 text-center text-gray-500">
                   No orders found.
@@ -185,7 +155,7 @@ function AdminOrders() {
         </table>
       </div>
 
-      {totalPages > 1 && (
+      {/* {totalPages > 1 && (
         <div className="flex justify-center mt-6 gap-2">
           {[...Array(totalPages)].map((_, i) => (
             <button
@@ -201,7 +171,7 @@ function AdminOrders() {
             </button>
           ))}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

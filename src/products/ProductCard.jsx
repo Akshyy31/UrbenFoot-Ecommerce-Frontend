@@ -74,7 +74,7 @@ function ProductCard({ productList }) {
 
             {/* View Details Button */}
             <Link
-              to={`/product-detail/${product.id}`}
+              to={`/product-detail/${product.id}/`}
               className="absolute bottom-4 left-1/2 transform -translate-x-1/2 !bg-black !text-white text-sm font-medium px-4 py-2 rounded-md opacity-0 group-hover:opacity-100 transition duration-300"
             >
               View Details

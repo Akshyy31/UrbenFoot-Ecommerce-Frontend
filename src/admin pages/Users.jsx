@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Api } from "../commonapi/api";
+// import { Api } from "../commonapi/api";
 import { Ban, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { adminUserListApi } from "../services/adminUserServices";
 
 function Users() {
   const [userList, setUserList] = useState([]);
@@ -10,9 +11,8 @@ function Users() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await Api.get("/users");
-        const nonAdminUsers = res.data.filter((user) => user.role !== "admin");
-        setUserList(nonAdminUsers);
+        const res = await adminUserListApi();
+        setUserList(res.data);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -20,24 +20,16 @@ function Users() {
     fetchUsers();
   }, []);
 
+  console.log(userList);
+
   // Toggle block/unblock
-  const handleToggleBlock = async (userId) => {
-    const user = userList.find((u) => u.id === userId);
-    if (!user) return;
-
-    const updatedUser = { ...user, blocked: !user.blocked };
-
-    try {
-      await Api.patch(`/users/${userId}`, updatedUser);
-      setUserList((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
-    } catch (error) {
-      console.error("Failed to update user:", error);
-    }
-  };
+ 
 
   return (
     <div className="bg-white min-h-screen overflow-x-auto">
-      <h5 className="text-3xl font-bold text-blue-600 mb-1 p-1">User Management</h5>
+      <h5 className="text-3xl font-bold text-blue-600 mb-1 p-1">
+        User Management
+      </h5>
 
       {userList.length > 0 ? (
         <div className="overflow-auto rounded-lg shadow border">

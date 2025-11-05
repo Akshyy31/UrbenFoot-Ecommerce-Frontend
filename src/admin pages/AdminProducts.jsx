@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Api } from "../commonapi/api";
+// import { Api } from "../commonapi/api";
 import { Eye, Pencil, Trash } from "lucide-react";
 import AddProducts from "./Addproducts";
 import EditProduct from "./EditProducts";
 import swal from "sweetalert";
+import { adminProductListApi } from "../services/adminProductServices";
 
 function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -21,12 +22,14 @@ function AdminProducts() {
 
   const fetchProducts = async () => {
     try {
-      const res = await Api.get("/products");
-      setProducts(res.data);
+      const res = await adminProductListApi();
+      setProducts(res.products);
     } catch (error) {
       console.error("Error fetching products:", error);
     }
   };
+  console.log(products);
+  
 
   useEffect(() => {
     fetchProducts();

@@ -8,7 +8,7 @@ const Login = () => {
   const { loginUser } = useContext(AuthContext);
 
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
 
@@ -18,15 +18,15 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { email, password } = formData;
+    const { username, password } = formData;
 
-    if (!email || !password) {
-      toast.error("Please fill both email and  password.");
+    if (!username || !password) {
+      toast.error("Please fill both username and password.");
       return;
     }
 
-    const user = await loginUser(email, password);  //    Get user from context function
-    console.log("user for admin ", user);
+    const user = await loginUser(username, password);
+    console.log("user for admin", user);
 
     if (user) {
       if (user.role === "admin") {
@@ -39,7 +39,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 p-5">
-      <div className="bg-white rounded-2xl shadow-xl flex max-w-4xl w-full overflow-hidden ">
+      <div className="bg-white rounded-2xl shadow-xl flex max-w-4xl w-full overflow-hidden">
         {/* Left Side Image */}
         <div className="hidden md:block w-1/2">
           <img
@@ -55,17 +55,20 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block mb-1 font-medium text-sm">
-                Email
+              <label
+                htmlFor="username"
+                className="block mb-1 font-medium text-sm"
+              >
+                Username
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
+                id="username"
+                name="username" // match the state key
+                type="text"
+                value={formData.username}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Enter your email"
+                placeholder="Enter your username or email"
                 required
               />
             </div>
@@ -73,7 +76,7 @@ const Login = () => {
             <div>
               <label
                 htmlFor="password"
-                className="block mb-1 font-medium text-sm "
+                className="block mb-1 font-medium text-sm"
               >
                 Password
               </label>
@@ -83,11 +86,12 @@ const Login = () => {
                 type="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2  border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Enter your password"
                 required
               />
             </div>
+
             <button
               type="submit"
               className="w-full mt-5 bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition duration-300"

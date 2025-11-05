@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
-import { Api } from "../commonapi/api";
+import api from "../Common API/api";
+import { productListView } from "../services/productSerives";
+// import { Api } from "../commonapi/api";
 
 function HomeCard() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    Api.get("/products/")
-      .then((res) => setProducts(res.data.slice(0, 4)))
+    productListView()
+      .then((res) => setProducts(res.products.slice(0, 4)))
       .catch((err) => console.log(err.message));
   }, []);
   return (
@@ -25,7 +27,7 @@ function HomeCard() {
               </button>
 
               {/* New Badge */}
-              {product.isNew && (
+              {product.is_new && (
                 <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow">
                   NEW
                 </span>

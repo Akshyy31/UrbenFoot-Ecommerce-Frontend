@@ -1,99 +1,126 @@
 // CartContext.jsx
 import { createContext, useState, useContext, useEffect } from "react";
 import AuthContext from "./AuthContext";
-import { Api } from "../commonapi/api";
-import swal from "sweetalert";
+import { toast } from "react-toastify";
+import {
+  AddToCartApi,
+  CartListApi,
+  DeleteCartApi,
+  UpdateCartApi,
+} from "../services/productSerives";
+
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const { currentUser } = useContext(AuthContext);
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState({ items: [], total_cart_price: 0 });
 
-  const cartCount = cart.length;
+  const cartCount = cart.items.length;
 
-  // Fetch cart from backend on login
+  // ✅ Fetch cart when user logs in
   useEffect(() => {
-    if (currentUser?.id) fetchCart();
+    if (currentUser) fetchCart();
   }, [currentUser]);
 
+  // ✅ Get Cart from backend
   const fetchCart = async () => {
     try {
-      const res = await Api.get(`/users/${currentUser.id}`);
-      console.log("result of user from cart:", res);
-      setCart(res.data.cart || []);
+      const res = await CartListApi();
+      setCart(res); // backend returns { items: [...], total_cart_price: ... }
     } catch (err) {
       console.error("Error fetching cart:", err);
     }
   };
 
-  const updateBackendCart = async (newCart) => {
+  //Add item to cart
+  const addToCart = async (product, quantity = 1) => {
     if (!currentUser) {
+      toast.error("Please login to add items to cart");
       return;
     }
     try {
-      await Api.patch(`/users/${currentUser.id}`, {
-        cart: newCart,
-      });
+      const payload = { product_id: product.id, quantity };
+      const res = await AddToCartApi(payload);
+      // update local cart state
+      const updatedItems = [...cart.items];
+      const existingIndex = updatedItems.findIndex(
+        (item) => item.product.id === product.id
+      );
+      if (existingIndex !== -1) {
+        updatedItems[existingIndex] = res;
+      } else {
+        updatedItems.push(res);
+      }
+      const total = updatedItems.reduce(
+        (acc, item) => acc + (item.product?.price || 0) * item.quantity,
+        0
+      );
+      setCart({ items: updatedItems, total_cart_price: total });
+      toast.success("Item added to cart!");
     } catch (err) {
-      console.error("Error syncing cart", err);
+      console.error("Error adding to cart:", err);
+      toast.error("Failed to add product to cart");
     }
   };
 
-  // add to cart
-  const addToCart = async (product, quantity = 1) => {
-    if (!currentUser) return;
+  //Increment quantity
+  const increment = async (cartItemId) => {
     try {
-      const { data } = await Api.get(`/users/${currentUser.id}`);
-      const existingCart = data.cart || [];
-
-      // Check if product already exists in cart
-
-      const updatedCart = existingCart.some((item) => item.id === product.id)
-        ? existingCart.map((item) =>
-            item.id === product.id
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          )
-        : [...existingCart, { ...product, quantity }];
-
-      updateBackendCart(updatedCart);
-      setCart(updatedCart);
+      const cartItem = cart.items.find((item) => item.id === cartItemId);
+      if (!cartItem) return;
+      const updated = await UpdateCartApi(cartItemId, cartItem.quantity + 1);
+      const updatedItems = cart.items.map((it) =>
+        it.id === cartItemId ? updated : it
+      );
+      const total = updatedItems.reduce(
+        (acc, it) => acc + (it.product?.price || 0) * it.quantity,
+        0
+      );
+      setCart({ items: updatedItems, total_cart_price: total });
     } catch (err) {
-      console.error("Add to cart failed:", err);
+      console.error("Error incrementing quantity:", err);
     }
   };
 
-  const removeFromCart = (productId) => {
-    const updatedCart = cart.filter((item) => item.id !== productId);
-    setCart(updatedCart);
-    updateBackendCart(updatedCart);
+  //Decrement quantity
+  const decrement = async (cartItemId) => {
+    try {
+      const cartItem = cart.items.find((item) => item.id === cartItemId);
+      if (!cartItem) return;
+      if (cartItem.quantity <= 1) return;
+      const newQuantity = cartItem.quantity - 1;
+      const updated = await UpdateCartApi(cartItemId, newQuantity);
+      const updatedItems = cart.items.map((it) =>
+        it.id === cartItemId ? updated : it
+      );
+      const total = updatedItems.reduce(
+        (acc, it) => acc + (it.product?.price || 0) * it.quantity,
+        0
+      );
+      setCart({ items: updatedItems, total_cart_price: total });
+    } catch (err) {
+      console.error("Error decrementing quantity:", err);
+    }
   };
-
-  const clearCart = () => {
-    setCart([]);
-    updateBackendCart([]);
-  };
-
-  const increment = (p_id) => {
-    const updatedCart = cart.map((item) =>
-      item.id === p_id ? { ...item, quantity: item.quantity + 1 } : item
-    );
-    setCart(updatedCart);
-    updateBackendCart(updatedCart);
-  };
-
-  const decrement = (p_id) => {
-    const updatedCart = cart.map((item) =>
-      item.id === p_id && item.quantity > 1
-        ? { ...item, quantity: item.quantity - 1 }
-        : item
-    );
-    setCart(updatedCart);
-    updateBackendCart(updatedCart);
-  };
-
-  const getTotalAmount = () => {
-    return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  // Clear entire cart
+  const deleteCartItem = async (cartItemId) => {
+    try {
+      await DeleteCartApi(cartItemId);
+      setCart((prev) => {
+        const updatedItems = prev.items.filter(
+          (item) => item.id !== cartItemId
+        );
+        const total = updatedItems.reduce(
+          (acc, it) => acc + (it.product?.price || 0) * it.quantity,
+          0
+        );
+        return { items: updatedItems, total_cart_price: total };
+      });
+      toast.success("Item removed from cart");
+    } catch (error) {
+      console.error("Error deleting cart item:", error);
+      toast.error("Failed to remove item from cart");
+    }
   };
 
   return (
@@ -101,12 +128,10 @@ export const CartProvider = ({ children }) => {
       value={{
         cart,
         addToCart,
-        removeFromCart,
-        cartCount,
-        clearCart,
         increment,
         decrement,
-        getTotalAmount,
+        deleteCartItem ,
+        cartCount,
       }}
     >
       {children}

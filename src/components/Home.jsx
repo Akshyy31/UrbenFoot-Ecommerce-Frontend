@@ -4,13 +4,15 @@ import Footer from "./Footer";
 import axios from "axios";
 import Navbar1 from "../Navbar/Navbar1";
 import ProductCard from "../products/ProductCard";
-import { Api } from "../commonapi/api";
+// import { Api } from "../commonapi/api";
+import api from "../Common API/api";
 import { Heart } from "lucide-react";
 import HeroBanner from "./HeroBanner";
 import HomeCard from "../Home_page_Card/HomeCard";
 import CategoryHome from "../Home_page_Card/CategoryHome";
 import About from "../About/About";
 import AuthContext from "../contextapi/AuthContext";
+import { userProfile } from "../services/userServices";
 
 function Home() {
   const [user, setUser] = useState(null);
@@ -26,13 +28,12 @@ function Home() {
   useEffect(() => {
     const userId = localStorage.getItem("userId");
     if (userId) {
-      Api.get(`/users/${userId}`)
+      userProfile()
         .then((res) => setUser(res.data))
         .catch((err) => console.error("Error fetching user", err));
     }
   }, []);
 
-  
   return (
     <div>
       <Navbar1 />

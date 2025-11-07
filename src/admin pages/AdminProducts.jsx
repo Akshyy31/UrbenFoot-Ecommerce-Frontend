@@ -1,59 +1,48 @@
 import React, { useEffect, useState } from "react";
-// import { Api } from "../commonapi/api";
 import { Eye, Pencil, Trash } from "lucide-react";
 import AddProducts from "./Addproducts";
 import EditProduct from "./EditProducts";
 import swal from "sweetalert";
-import { adminProductListApi } from "../services/adminProductServices";
+import {
+  adminDeleteProductApi,
+  adminProductListApi,
+} from "../services/adminProductServices";
 
 function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchName, setSearchName] = useState("");
-  const [searchCategory, setSearchCategory] = useState("ALL");
-  const [editProductId, setEditProductId] = useState(false);
-  const itemsPerPage = 10;
+  const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [editProductId, setEditProductId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [next, setNext] = useState(null);
+  const [prev, setPrev] = useState(null);
+  const [total, setTotal] = useState(0);
 
+  // 🧩 Fetch products from backend
+  const fetchProducts = async () => {
+    try {
+      const res = await adminProductListApi(page, searchName, selectedCategory);
+      setProducts(res.products || []);
+      setNext(res.next);
+      setPrev(res.previous);
+      setTotal(res.count);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [page, searchName, selectedCategory]);
+
+  // 🧹 Refresh after closing edit modal
   const closeEditModal = () => {
     setEditProductId(null);
     fetchProducts();
   };
 
-  const fetchProducts = async () => {
-    try {
-      const res = await adminProductListApi();
-      setProducts(res.products);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
-  console.log(products);
-  
-
-  useEffect(() => {
-    fetchProducts();
-  }, [searchName,searchCategory]);
-
-  const filteredProducts = products.filter((product) => {
-    const nameMatch = product.name
-      .toLowerCase()
-      .includes(searchName.toLowerCase());
-      const categoryMatch =
-  searchCategory === "ALL" || product.category.toLowerCase() === searchCategory.toLowerCase();
-
-    return nameMatch&&categoryMatch;
-  });
-
-  // pagination
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const currentProducts = filteredProducts.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
-
+  // 👁 View product details
   const handleViewProduct = (product) => {
     swal({
       title: product.name,
@@ -64,20 +53,20 @@ function AdminProducts() {
 
   const createProductContent = (product) => {
     const container = document.createElement("div");
-
     container.innerHTML = `
-  <div style="text-align: center; margin-bottom: 12px;">
-    <img src="${product.image}" alt="${product.name}"  style="width: 200px; height: auto; border-radius: 8px;" />
-  </div>
-  <p><strong>Brand:</strong> ${product.brand}</p>
-  <p><strong>Category:</strong> ${product.category}</p>
-  <p><strong>Price:</strong> ₹${product.price}</p>
-  <p><strong>Stock:</strong> ${product.stock}</p>
-  <p><strong>Description:</strong> ${product.description}</p>
-`;
+      <div style="text-align: center; margin-bottom: 12px;">
+        <img src="${product.image}" alt="${product.name}" style="width: 200px; height: auto; border-radius: 8px;" />
+      </div>
+      <p><strong>Brand:</strong> ${product.brand}</p>
+      <p><strong>Category:</strong> ${product.category}</p>
+      <p><strong>Price:</strong> ₹${product.price}</p>
+      <p><strong>Stock:</strong> ${product.stock}</p>
+      <p><strong>Description:</strong> ${product.description}</p>
+    `;
     return container;
   };
 
+  // ❌ Delete product
   const handleDeleteProduct = (id) => {
     swal({
       title: "Are you sure?",
@@ -88,9 +77,9 @@ function AdminProducts() {
     }).then(async (willDelete) => {
       if (willDelete) {
         try {
-          await Api.delete(`/products/${id}`);
+          await adminDeleteProductApi(id);
+          setProducts((prev) => prev.filter((p) => p.id !== id)); // remove immediately
           swal("Deleted!", "The product has been removed.", "success");
-          fetchProducts(); 
         } catch (error) {
           console.error("Delete failed:", error);
           swal("Oops!", "Failed to delete product.", "error");
@@ -101,6 +90,7 @@ function AdminProducts() {
 
   return (
     <div className="p-4 bg-white min-h-screen">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h4 className="text-2xl font-bold text-gray-800">Products List</h4>
         <button
@@ -111,14 +101,12 @@ function AdminProducts() {
         </button>
       </div>
 
-      {/* Render Add Product form conditionally */}
+      {/* Add Product Form */}
       {showAddForm && (
-        <AddProducts
-          onClose={() => setShowAddForm(false)}
-          onAdded={fetchProducts}
-        />
+        <AddProducts onClose={() => setShowAddForm(false)} onAdded={fetchProducts} />
       )}
 
+      {/* Filters */}
       <div className="flex flex-col md:flex-row md:items-center gap-4 p-3">
         <input
           type="text"
@@ -129,15 +117,14 @@ function AdminProducts() {
         />
 
         <select
-          value={searchCategory}
-          onChange={(e) => setSearchCategory(e.target.value)}
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
           className="border px-3 py-2 rounded-md w-full md:w-1/3"
         >
           <option value="ALL">All Categories</option>
-          <option value="Men">Men</option>
-          <option value="Women">Women</option>
-          <option value="Kids">Kids</option>
-          <option value="Running">Running</option>
+          <option value="MEN">Men</option>
+          <option value="WOMEN">Women</option>
+          <option value="KIDS">Kids</option>
         </select>
       </div>
 
@@ -145,7 +132,7 @@ function AdminProducts() {
       <div className="overflow-x-auto p-3">
         <table className="min-w-full bg-white border rounded-xl shadow-md">
           <thead className="bg-white border">
-            <tr className="text-left text-gray-700 text-sm ">
+            <tr className="text-left text-gray-700 text-sm">
               <th className="p-3">Product</th>
               <th className="p-3">Price</th>
               <th className="p-3">ID</th>
@@ -154,11 +141,8 @@ function AdminProducts() {
             </tr>
           </thead>
           <tbody>
-            {currentProducts.map((product, i) => (
-              <tr
-                key={product.id}
-                className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}
-              >
+            {products.map((product, i) => (
+              <tr key={product.id} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                 <td className="p-2 flex items-center gap-3">
                   <img
                     src={product.image}
@@ -206,43 +190,38 @@ function AdminProducts() {
             ))}
           </tbody>
         </table>
-        <div className="flex justify-center mt-4 gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
 
-          {[...Array(totalPages)].map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentPage(index + 1)}
-              className={`px-3 py-1 rounded ${
-                currentPage === index + 1
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200"
-              }`}
-            >
-              {index + 1}
-            </button>
-          ))}
-
-          <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
         {products.length === 0 && (
           <p className="text-gray-500 text-center py-6">No products found.</p>
         )}
       </div>
+
+      {/* Pagination */}
+      <div className="flex justify-center gap-2 mt-4">
+        <button
+          disabled={!prev}
+          onClick={() => setPage((p) => p - 1)}
+          className={`px-3 py-1 rounded ${
+            !prev ? "bg-gray-300" : "bg-blue-500 text-white"
+          }`}
+        >
+          Prev
+        </button>
+
+        <span className="px-3 py-1">Page {page}</span>
+
+        <button
+          disabled={!next}
+          onClick={() => setPage((p) => p + 1)}
+          className={`px-3 py-1 rounded ${
+            !next ? "bg-gray-300" : "bg-blue-500 text-white"
+          }`}
+        >
+          Next
+        </button>
+      </div>
+
+      {/* Edit Modal */}
       {editProductId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg w-[90%] max-w-2xl relative">

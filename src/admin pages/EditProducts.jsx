@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-// import { Api } from "../commonapi/api";
+import { toast } from "react-toastify";
+import api from "../Common API/api";
+import { adminEditGetProductApi, adminEditProductApi } from "../services/adminProductServices";
 
 function EditProduct({ id, onClose }) {
   const [formData, setFormData] = useState({
@@ -10,19 +12,32 @@ function EditProduct({ id, onClose }) {
     stock: "",
     quantity: "",
     description: "",
-    image: "",
-    image1: "",
-    image2: "",
-    image3: "",
+    image: null,
+    image1: null,
+    image2: null,
+    image3: null,
   });
 
+  // ✅ Fetch product details
   const fetchProduct = async () => {
     try {
-      const res = await Api.get(`/products/${id}`);
-      setFormData(res.data);
-      console.log("product res : ", res);
+      const data = await adminEditGetProductApi(id);
+      setFormData({
+        name: data.name || "",
+        brand: data.brand || "",
+        category: data.category?.name || "",
+        price: data.price || "",
+        stock: data.stock || "",
+        quantity: data.quantity || "",
+        description: data.description || "",
+        image: null,
+        image1: null,
+        image2: null,
+        image3: null,
+      });
     } catch (error) {
       console.error("Error fetching product:", error);
+      toast.error("Failed to load product details");
     }
   };
 
@@ -30,117 +45,62 @@ function EditProduct({ id, onClose }) {
     fetchProduct();
   }, [id]);
 
-  
-
+  // ✅ Handle input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, files, type } = e.target;
+    if (type === "file") {
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
+  // ✅ Handle submit (update)
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      await Api.put(`/products/${id}`, formData);
-      onClose(); // Close modal after success
+      const data = new FormData();
+      for (const key in formData) {
+        if (formData[key]) data.append(key, formData[key]);
+      }
+
+      await api.patch(`adminside/product/management/${id}/`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      toast.success("Product updated successfully!");
+      onClose();
     } catch (error) {
-      console.error("Error updating product:", error);
+      console.error("Error updating product:", error.response?.data || error);
+      toast.error("Failed to update product");
     }
   };
 
   return (
-    <div
-      className="min-h-screen w-full bg-cover bg-center bg-no-repeat flex items-center justify-center"
-      style={{
-        backgroundImage:
-          "url('https://i.pinimg.com/1200x/04/a7/1d/04a71d1f1ae885fb8207b4e31ff11532.jpg'",
-        backgroundColor: "",
-        backgroundBlendMode: "overlay",
-      }}
-    >
-      <div className="bg-white bg-opacity-90 rounded-xl shadow-xl p-6 w-full max-w-5xl">
-        <form onSubmit={handleSubmit} className="space-y-6 p-2">
-          <h2 className="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-4xl">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-800 border-b pb-2">
             Edit Product
           </h2>
 
-          {/* Main Fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Brand
-              </label>
-              <input
-                type="text"
-                name="brand"
-                value={formData.brand}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <input
-                type="text"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price
-              </label>
-              <input
-                type="text"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Stock
-              </label>
-              <input
-                type="text"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Quantity
-              </label>
-              <input
-                type="text"
-                name="quantity"
-                value={formData.quantity}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          {/* Basic Fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {["name", "brand", "category", "price", "stock", "quantity"].map((key) => (
+              <div key={key}>
+                <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                  {key}
+                </label>
+                <input
+                  type={key === "price" || key === "quantity" ? "number" : "text"}
+                  name={key}
+                  value={formData[key] || ""}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            ))}
           </div>
 
           {/* Description */}
@@ -150,32 +110,32 @@ function EditProduct({ id, onClose }) {
             </label>
             <textarea
               name="description"
-              value={formData.description}
+              value={formData.description || ""}
               onChange={handleChange}
               rows={4}
-              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
 
-          {/* Image Links */}
+          {/* File Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {["image", "image1", "image2", "image3"].map((imgKey) => (
-              <div key={imgKey}>
+            {["image", "image1", "image2", "image3"].map((key) => (
+              <div key={key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                  {imgKey}
+                  {key}
                 </label>
                 <input
-                  type="text"
-                  name={imgKey}
-                  value={formData[imgKey]}
+                  type="file"
+                  name={key}
+                  accept="image/*"
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-sm"
                 />
               </div>
             ))}
           </div>
 
-          {/* Action Buttons */}
+          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -198,3 +158,4 @@ function EditProduct({ id, onClose }) {
 }
 
 export default EditProduct;
+ 

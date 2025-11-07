@@ -19,7 +19,7 @@ function getCookie(name) {
 }
 
 // Refresh access token safely
-const constrefreshAccessToken = async () =>  {
+const refreshAccessToken = async () =>  {
   try {
     const data = await refreshTokenApi();
     return data.access;

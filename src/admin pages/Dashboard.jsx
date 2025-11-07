@@ -20,54 +20,72 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { adminUserListApi } from "../services/adminUserServices";
-import { adminOrderListApi, adminProductListApi } from "../services/adminProductServices";
-// import { Api } from "../commonapi/api";
+import {
+  adminOrderListApi,
+  adminProductListApi,
+} from "../services/adminProductServices";
+import { OrderSummaryViewApi } from "../services/adminOrderServices";
 
 const Dashboard = () => {
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [barData, setBarData] = useState([]);
-  const [totalrevenue,setTotalRevenue]=useState(0)
-  const [totalOrders,setTotalOrders]=useState(0)
+  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
 
-  
-  console.log("orders : ",orders);
-  
   useEffect(() => {
     const fetchData = async () => {
       const resUsers = await adminUserListApi();
       const resProducts = await adminProductListApi();
-      const allOrders = await adminOrderListApi()
+      const allOrders = await adminOrderListApi();
+      const summary = await OrderSummaryViewApi();
+
       setUsers(resUsers.data);
       setProducts(resProducts.products);
       setOrders(allOrders.orders);
-      setTotalRevenue(allOrders.total_revenue_generated)
-      setTotalOrders(allOrders.total_products_purchased)
-      setBarData(computeWeeklyRevenue(allOrders.orders));
-    };
-    fetchData();
-    const interval = setInterval(fetchData, 30000); // every 30 seconds
-    return () => clearInterval(interval); // clean up
-  }, []);
+      setTotalRevenue(summary.monthly_sales || 0);
+      setTotalOrders(summary.summary.delivered + summary.summary.cancelled);
 
-  
-  
+      // Generate 12 months data
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+
+      const monthlyData = months.map((month, index) => ({
+        month,
+        revenue:
+          index === new Date().getMonth() ? summary.monthly_sales || 0 : 0,
+      }));
+
+      setMonthlyRevenue(monthlyData);
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const totalDelivered = orders.filter(
     (order) => order.status === "DELIVERED"
   ).length;
-
   const totalProcessing = orders.filter(
     (order) => order.status === "PROCESSING"
   ).length;
-
   const totalPending = orders.filter(
     (order) => order.status === "PENDING"
   ).length;
-
-  console.log(totalPending);
-  
 
   const stats = [
     {
@@ -108,9 +126,8 @@ const Dashboard = () => {
     },
     {
       label: "Revenue",
-      value: `₹${totalrevenue}`,
+      value: `₹${totalRevenue}`,
       icon: <Wallet className="w-5 h-5" />,
-      // bg: "bg-rose-200",
       bg: "bg-yellow-200",
     },
   ];
@@ -121,29 +138,11 @@ const Dashboard = () => {
     { name: "Processing", value: totalProcessing },
   ];
 
-  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const computeWeeklyRevenue = (orders) => {
-    
-    const revenueMap = { Sun: 0, Mon: 0, Tue: 0, Wed: 0,Thu: 0, Fri: 0, Sat: 0,};
-
-    orders.forEach((order) => {
-      const orderDate = new Date(order.date);
-      const day = daysOfWeek[orderDate.getDay()];
-      revenueMap[day] += order.total || 0;
-    });
-
-    // Return as an array in order
-    return daysOfWeek.map((day) => ({
-      day,
-      revenue: revenueMap[day],
-    }));
-  };
-
   const COLORS = ["#9578cd", "#4f46e5", "#10b981"];
 
   return (
     <div className="bg-white min-h-screen">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mb-10 p-3 ">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mb-10 p-3">
         {stats.map((stat) => (
           <div
             key={stat.label}
@@ -162,9 +161,9 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5">
-        <div className="bg-white  p-2 rounded-xl shadow">
+        {/* Pie Chart */}
+        <div className="bg-white p-2 rounded-xl shadow">
           <h5 className="text-lg font-semibold mb-4">
             Order Status Distribution
           </h5>
@@ -194,30 +193,14 @@ const Dashboard = () => {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-
-          
-          <div className="flex justify-around mt-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#9578cd]"></span>
-              <span>Pending</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#342ea1]"></span>
-              <span>Delivered</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#2f745d]"></span>
-              <span>Processing</span>
-            </div>
-          </div>
         </div>
 
-        {/* Bar Chart */}
-        <div className="bg-white p-3 rounded-xl shadow ">
-          <h5 className="text-lg font-semibold mb-4">Weekly Revenue</h5>
+        {/* Monthly Revenue Bar Chart */}
+        <div className="bg-white p-3 rounded-xl shadow">
+          <h5 className="text-lg font-semibold mb-4">Monthly Revenue</h5>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={barData}>
-              <XAxis dataKey="day" />
+            <BarChart data={monthlyRevenue}>
+              <XAxis dataKey="month"/>
               <YAxis />
               <Tooltip />
               <Bar dataKey="revenue" fill="#6366f1" radius={[10, 10, 0, 0]} />

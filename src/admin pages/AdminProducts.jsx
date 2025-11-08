@@ -103,7 +103,10 @@ function AdminProducts() {
 
       {/* Add Product Form */}
       {showAddForm && (
-        <AddProducts onClose={() => setShowAddForm(false)} onAdded={fetchProducts} />
+        <AddProducts
+          onClose={() => setShowAddForm(false)}
+          onAdded={fetchProducts}
+        />
       )}
 
       {/* Filters */}
@@ -142,7 +145,10 @@ function AdminProducts() {
           </thead>
           <tbody>
             {products.map((product, i) => (
-              <tr key={product.id} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+              <tr
+                key={product.id}
+                className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}
+              >
                 <td className="p-2 flex items-center gap-3">
                   <img
                     src={product.image}

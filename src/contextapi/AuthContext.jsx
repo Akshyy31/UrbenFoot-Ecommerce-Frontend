@@ -55,6 +55,12 @@ export const AuthProvider = ({ children }) => {
       const res = await userLogin({ username, password });
       console.log("Login Response:", res);
       const { access, refresh, user } = res;
+
+      if (user.status === "blocked") {
+        toast.error("Your account has been blocked by the admin.");
+        return null;
+      }
+
       // Save tokens & user info
       localStorage.setItem("accessToken", access);
       localStorage.setItem("refreshToken", refresh);

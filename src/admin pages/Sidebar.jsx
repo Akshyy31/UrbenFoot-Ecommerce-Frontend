@@ -15,7 +15,7 @@ import AuthContext from "../contextapi/AuthContext";
 const Sidebar = ({ onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  let { currentUser } = useContext(AuthContext);
+  let { currentUser,logoutUser } = useContext(AuthContext);
   console.log("user from side bar as admin", currentUser);
 
   const navItems = [
@@ -33,10 +33,7 @@ const Sidebar = ({ onClose }) => {
     { label: "Orders", icon: <Package size={20} />, path: "/admin/orders" },
   ];
 
-  const logout = () => {
-    localStorage.removeItem("userId");
-    navigate("/");
-  };
+  
 
   return (
     <div className="h-full w-72 bg-white flex flex-col shadow-2xl z-10 border-r border-gray-200 relative overflow-y-auto scrollbar-thin">
@@ -94,7 +91,7 @@ const Sidebar = ({ onClose }) => {
         </button>
 
         <button
-          onClick={logout}
+          onClick={logoutUser}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
         >
           <LogOut size={18} />

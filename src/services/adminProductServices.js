@@ -7,7 +7,7 @@ export const adminProductListApi = async (
 ) => {
   let url = `adminside/productslist/?page=${page}`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
-  if (category) url += `&category=${encodeURIComponent(category)}`;
+  if (category && category !== "ALL") url += `&category=${encodeURIComponent(category)}`;
   const res = await api.get(url);
   return res.data;
 };

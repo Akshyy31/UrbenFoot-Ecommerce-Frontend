@@ -31,6 +31,7 @@ const Sidebar = ({ onClose }) => {
       path: "/admin/products",
     },
     { label: "Orders", icon: <Package size={20} />, path: "/admin/orders" },
+    { label: "Messages", icon: <Package size={20} />, path: "/admin/messages" },
   ];
 
   

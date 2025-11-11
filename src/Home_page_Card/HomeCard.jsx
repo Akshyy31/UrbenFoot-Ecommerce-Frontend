@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
-import api from "../Common API/api";
-import { productListView } from "../services/productSerives";
-// import { Api } from "../commonapi/api";
+import { mostOrderedProductApi } from "../services/productSerives";
 
 function HomeCard() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    productListView()
-      .then((res) => setProducts(res.products.slice(0, 4)))
-      .catch((err) => console.log(err.message));
+    mostOrderedProductApi()
+      .then((res) => {
+        setProducts(res.slice(0, 4));
+      })
+      .catch((err) => console.error("Error fetching:", err.message));
   }, []);
+
   return (
     <div>
+
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {products && products.length > 0 ? (
           products.map((product) => (
@@ -38,7 +41,7 @@ function HomeCard() {
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="max-h-32 object-contain transition-transform duration-300 group-hover:scale-135"
+                  className="max-h-32 object-contain transition-transform duration-300 group-hover:scale-110"
                 />
               </div>
 
@@ -53,6 +56,7 @@ function HomeCard() {
                 <p className="text-black font-bold text-base mt-1">
                   ₹{product.price}
                 </p>
+               
               </div>
             </div>
           ))

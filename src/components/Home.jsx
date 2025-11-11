@@ -43,7 +43,7 @@ function Home() {
 
       <div className=" mx-auto px-4 py-10 bg-gray-100">
         <div className="font-bold text-3xl text-zinc-700 p-4">
-          Featured Products
+          Most Ordered Products
         </div>
 
         <div className="bg-[#85929f] rounded-xl p-5 text-center text-white mb-10">

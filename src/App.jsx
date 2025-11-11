@@ -19,6 +19,8 @@ import Users from "./admin pages/Users";
 import Userdetails from "./admin pages/Userdetails";
 import EditProduct from "./admin pages/EditProducts";
 import UserProfile from "./components/UserProfile";
+import ContactPage from "./components/ContactPage";
+import AdminContactDashboard from "./admin pages/AdminContactDashboard";
 
 
 function App() {
@@ -31,6 +33,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<UserProfile />} />
+        <Route path="/contact" element={<ContactPage />} />
 
         {/* User Protected Routes */}
         <Route path="/productlist" element={<ProductList />} />
@@ -46,6 +49,7 @@ function App() {
           <Route path="users" element={<Users />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<AdminOrders />} />
+          <Route path="messages" element={<AdminContactDashboard />} />
           <Route path="users/:id" element={<Userdetails />} />
           <Route path="products/edit/:id" element={<EditProduct />} />
         </Route>

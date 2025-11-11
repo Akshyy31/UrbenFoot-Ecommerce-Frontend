@@ -45,3 +45,9 @@ export const categoryViewApi = async () => {
   const res = await api.get("adminside/category/");
   return res.data;
 };
+
+
+export const messageViewAPi = async()=>{
+  const res = api.get('adminside/contactview/');
+  return res
+}

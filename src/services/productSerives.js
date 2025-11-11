@@ -37,3 +37,13 @@ export const FilterProductApi = async (filters = {}) => {
   const res = await api.get("/urbanfoot/product_filter/", { params: filters });
   return res.data;
 };
+
+export const mostOrderedProductApi = async()=>{
+  const res = await api.get('urbanfoot/most-ordered-products/');
+  return res.data
+}
+
+export const ContactApi  = async(data)=>{
+  const res = await api.post('urbanfoot/contact/',data)
+  return res.data
+}

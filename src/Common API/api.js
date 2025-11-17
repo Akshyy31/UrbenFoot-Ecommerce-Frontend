@@ -3,7 +3,7 @@ import { refreshTokenApi } from "../services/userServices";
 
 const api = axios.create({
   baseURL: "https://urbenfoot.duckdns.org",                          // Django backend
-       withCredentials: true,  //                            // include cookies (for CSRF/session)
+      //  withCredentials: true,  //                            // include cookies (for CSRF/session)
   headers: {
     "Content-Type": "application/json",
     "X-Requested-With": "XMLHttpRequest",                    //  Django AJAX check

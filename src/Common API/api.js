@@ -2,7 +2,7 @@ import axios from "axios";
 import { refreshTokenApi } from "../services/userServices";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000",                          // Django backend
+  baseURL: "https://urbenfoot.duckdns.org/",                          // Django backend
        withCredentials: true,  //                            // include cookies (for CSRF/session)
   headers: {
     "Content-Type": "application/json",

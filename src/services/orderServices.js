@@ -2,7 +2,7 @@
 import api from "../Common API/api";
 
 export const createOrderApi = async (data) => {
-  const res = await api.post("payments/create_order/", data);
+  const res = await api.post("/payments/create_order/", data);
   return res.data;
 };
 
